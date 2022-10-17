@@ -17,7 +17,7 @@ async def check(name, session, sem):
 async def main(total, max_len=10):
     logFormatter = logging.Formatter("[%(levelname)-5.5s]  %(message)s")
     rootLogger = logging.getLogger()
-    rootLogger.setLevel(logging.DEBUG)
+    rootLogger.setLevel(logging.INFO) # logging.DEBUG to see taken names
 
     fileHandler = logging.FileHandler("log.log")  # log.log.log.log.txt
     fileHandler.setFormatter(logFormatter)
@@ -48,5 +48,5 @@ async def main(total, max_len=10):
 
 if __name__ == '__main__':
     TOTAL = 20 # 25 names per round for x (20) rounds
-    MAX_LEN = 10
+    MAX_LEN = 5
     asyncio.run(main(TOTAL, MAX_LEN))
