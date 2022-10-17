@@ -1,6 +1,8 @@
 import logging
 import asyncio
+import string
 import sys
+import random
 
 import aiohttp
 
@@ -14,10 +16,10 @@ async def check(name, session, sem):
         return resp_json['code'], name
 
 
-async def main(total, max_len=10):
+async def main(max_len=10, mode="words"):
     logFormatter = logging.Formatter("[%(levelname)-5.5s]  %(message)s")
     rootLogger = logging.getLogger()
-    rootLogger.setLevel(logging.INFO) # logging.DEBUG to see taken names
+    rootLogger.setLevel(logging.INFO)  # logging.DEBUG to see taken names
 
     fileHandler = logging.FileHandler("log.log")  # log.log.log.log.txt
     fileHandler.setFormatter(logFormatter)
@@ -29,10 +31,19 @@ async def main(total, max_len=10):
 
     sem = asyncio.Semaphore(40)
     async with aiohttp.ClientSession() as session:
-        for x in range(total):
-            words = await session.get('https://random-word-api.herokuapp.com/word?number=25')
-            words = await words.json()
-            tasks = [asyncio.create_task(check(word[:max_len], session, sem)) for word in words]
+        for x in range(10000):
+            if mode == "words":
+                words = await session.get('https://random-word-api.herokuapp.com/word?number=100')
+                words = await words.json()
+                words = [w[:max_len] for w in words]
+            else:
+                words = [
+                    ''.join(random.choice(string.ascii_uppercase + string.digits + "_")
+                            for _ in range(max_len)) for __ in range(100)
+                ]
+            print(words)
+
+            tasks = [asyncio.create_task(check(word, session, sem)) for word in words]
             results = await asyncio.gather(*tasks)
             for status, name in results:
                 if status == 404:
@@ -45,8 +56,8 @@ async def main(total, max_len=10):
                     rootLogger.debug("Huh?", status, name)
 
 
-
 if __name__ == '__main__':
-    TOTAL = 20 # 25 names per round for x (20) rounds
-    MAX_LEN = 5
-    asyncio.run(main(TOTAL, MAX_LEN))
+    MAX_LEN = 4
+    # mode = "words" # Other mode is random characters
+    mode = "random"
+    asyncio.run(main(MAX_LEN))
